@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 django = "^5.1"
 django-htmx = "^1.19.0"
+django-tailwind = "^3.8.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -20,6 +21,8 @@ factory-boy = "^3.3.1"
 pytest-mock = "^3.14.0"
 pytest-xdist = "^3.6.1"
 pytest-django = "^4.8.0"
+django-browser-reload = "^1.15.0"
+django-debug-toolbar = "^4.4.6"
 
 [build-system]
 requires = ["poetry-config"]

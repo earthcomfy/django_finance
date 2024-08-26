@@ -2,7 +2,7 @@
 With these settings, tests run faster.
 """
 
-from .base import *  # noqa
+from .base import *  # noqa: F403
 
 # GENERAL
 # ------------------------------------------------------------------------------
