@@ -9,3 +9,5 @@ MIDDLEWARE += [  # noqa: F405
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",
 ]
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

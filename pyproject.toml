@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "django-finance"
+name = "FinTrack"
 version = "0.1.0"
 description = "Personal Finance Management App with Django, HTMX, Tailwind and Plaid"
 authors = ["earthcomfy <hanagetbel93@gmail.com>"]
@@ -10,6 +10,7 @@ python = "^3.10"
 django = "^5.1"
 django-htmx = "^1.19.0"
 django-tailwind = "^3.8.0"
+django-allauth = { extras = ["mfa"], version = "^64.1.0" }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -37,3 +38,7 @@ markers = [
 
 [tool.ruff]
 line-length = 119
+
+[tool.djlint]
+profile = "django"
+ignore = "H031"

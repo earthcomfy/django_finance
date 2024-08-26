@@ -1,0 +1,11 @@
+{% load static %}
+{% load app_info %}
+<a href=""
+   class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
+    <img class="w-8 h-8 mr-2"
+         src="{% static 'images/icons/logo.png' %}"
+         alt="logo"
+         width="8"
+         height="8">
+    {% app_name %}
+</a>
