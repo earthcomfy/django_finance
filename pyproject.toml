@@ -36,6 +36,25 @@ markers = [
     "unit: tests that are isolated from the db, external api calls and other mockable internal code.",
 ]
 
+[tool.coverage.run]
+include = ["apps/**"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    '*/.venv/*',
+    '*/venv/*',
+    '*/env/*',
+    '*/staticfiles/*',
+    '*/config/*',
+    '*/__init__.py',
+    '*apps.py',
+    '*urls.py',
+    '*wsgi.py',
+    '*asgi.py',
+    '*manage.py',
+    '*requirements.txt',
+]
+
 [tool.ruff]
 line-length = 119
 
