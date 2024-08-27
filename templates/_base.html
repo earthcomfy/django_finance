@@ -16,7 +16,11 @@
         {% tailwind_css %}
     </head>
     <body>
-        {% block content %}
-        {% endblock content %}
+        {% include "layouts/_header.html" %}
+        <main>
+            {% block content %}
+            {% endblock content %}
+        </main>
     </body>
+    <script src="{% static 'js/flowbite.min.js' %}"></script>
 </html>

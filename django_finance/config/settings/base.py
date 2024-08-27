@@ -156,7 +156,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 
-LOGIN_REDIRECT_URL = "index"
+LOGIN_REDIRECT_URL = "profile"
 
 LOGOUT_REDIRECT_URL = "index"
 
@@ -173,6 +173,11 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
+
+# https://docs.allauth.org/en/latest/mfa/configuration.html
+MFA_SUPPORTED_TYPES = ["recovery_codes", "totp"]
+MFA_TOTP_PERIOD = 30
+MFA_TOTP_DIGITS = 6
 
 TAILWIND_APP_NAME = "theme"
 
