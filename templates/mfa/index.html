@@ -1,0 +1,89 @@
+{% extends "_base.html" %}
+{% load allauth %}
+{% block title %}
+    Two-Factor Authentication
+{% endblock title %}
+{% block content %}
+    {% include "layouts/_sidebar.html" %}
+    <section class="bg-gray-50 dark:bg-gray-900">
+        <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+            <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                    <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                        Two-Factor Authentication
+                    </h1>
+                    <div class="space-y-4 md:space-y-6">
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg p-6">
+                            <h2 class="text-lg font-medium text-gray-900 dark:text-white">Authenticator App</h2>
+                            <p class="text-gray-700 dark:text-gray-300 mt-2">
+                                {% if authenticators.totp %}
+                                    Authentication using an authenticator app is active.
+                                {% else %}
+                                    An authenticator app is not active.
+                                {% endif %}
+                            </p>
+                            <div class="mt-4">
+                                {% url 'mfa_deactivate_totp' as deactivate_url %}
+                                {% url 'mfa_activate_totp' as activate_url %}
+                                {% if authenticators.totp %}
+                                    <a href="{{ deactivate_url }}">
+                                        <button class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                                            Deactivate
+                                        </button>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ activate_url }}">
+                                        <button class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                                            Activate
+                                        </button>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg p-6 mt-6">
+                                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Recovery Codes</h2>
+                                <p class="text-gray-700 dark:text-gray-300 mt-2">
+                                    {% if authenticators.recovery_codes %}
+                                        {% if unused_count == 1 %}
+                                            There is {{ unused_count }} out of {{ total_count }} recovery code available.
+                                        {% else %}
+                                            There are {{ unused_count }} out of {{ total_count }} recovery codes available.
+                                        {% endif %}
+                                    {% else %}
+                                        No recovery codes set up.
+                                    {% endif %}
+                                </p>
+                                <div class="mt-4">
+                                    {% if is_mfa_enabled and authenticators.recovery_codes %}
+                                        {% if unused_count > 0 %}
+                                            <div class="flex space-x-2">
+                                                <a href="{% url 'mfa_view_recovery_codes' %}">
+                                                    <button class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                                                        View
+                                                    </button>
+                                                </a>
+                                                <a href="{% url 'mfa_download_recovery_codes' %}">
+                                                    <button class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                                                        Download
+                                                    </button>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <div class="flex space-x-2 mt-4">
+                                    <a href="{% url 'mfa_generate_recovery_codes' %}">
+                                        <button class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                                            Generate
+                                        </button>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock content %}
