@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.mfa",
+    "django_cotton",
 ]
 
 LOCAL_APPS = ["django_finance.apps.common", "django_finance.apps.accounts"]
@@ -184,3 +185,6 @@ TAILWIND_APP_NAME = "theme"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# https://django-cotton.com/docs/configuration
+COTTON_DIR = "components"
