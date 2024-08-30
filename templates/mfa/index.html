@@ -88,6 +88,6 @@
             </div>
         </div>
     </section>
-    <c-modal modal_id="deactivate-2fa-modal" modal_title="You are about to deactivate authenticator app based authentication. Are you sure?" action_url="{% url 'mfa_deactivate_totp' %}"></c-modal>
-    <c-modal modal_id="generate-recovery-codes-modal" modal_title="You are about to generate a new set of recovery codes for your account. This action will invalidate your existing codes. Are you sure?" action_url="{% url 'mfa_generate_recovery_codes' %}"></c-modal>
+    <c-modal modal_id="deactivate-2fa-modal" modal_title="You are about to deactivate authenticator app based authentication. Are you sure?" action_url="{% url 'mfa_deactivate_totp' %}" />
+    <c-modal modal_id="generate-recovery-codes-modal" modal_title="You are about to generate a new set of recovery codes for your account. This action will invalidate your existing codes. Are you sure?" action_url="{% url 'mfa_generate_recovery_codes' %}" />
 {% endblock content %}

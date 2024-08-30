@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -188,3 +189,11 @@ INTERNAL_IPS = [
 
 # https://django-cotton.com/docs/configuration
 COTTON_DIR = "components"
+
+# https://docs.djangoproject.com/en/5.1/ref/contrib/messages/#message-tags
+MESSAGE_TAGS = {
+    messages.INFO: "info",
+    messages.SUCCESS: "success",
+    messages.WARNING: "warning",
+    messages.ERROR: "danger",
+}
