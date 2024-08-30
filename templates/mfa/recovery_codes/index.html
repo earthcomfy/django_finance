@@ -3,7 +3,6 @@
 {% block title %}
     Recovery Codes
 {% endblock title %}
-{% load allauth %}
 {% block content %}
     {% include "layouts/_sidebar.html" %}
     <section class="bg-gray-50 dark:bg-gray-900">
@@ -19,10 +18,10 @@
                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                             Unused codes
                         </label>
-                        <textarea id="recovery_codes"
-                                  rows="{{ unused_codes|length }}"
-                                  readonly
-                                  class="block w-full text-sm p-2.5 text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">{% for code in unused_codes %}{{ code }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}</textarea>
+                        <ul id="recovery_codes"
+                            class="block w-full text-sm p-2.5 text-gray-900 bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white ">
+                            {% for code in unused_codes %}<li>{{ code }}</li>{% endfor %}
+                        </ul>
                     </div>
                     <div class="flex space-x-2">
                         {% if unused_codes %}
@@ -33,13 +32,16 @@
                             </a>
                         {% endif %}
                         {% url 'mfa_generate_recovery_codes' as generate_url %}
-                        <a href="{{ generate_url }}"
-                           class="text-blue-700 hover:text-white border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:hover:bg-blue-500 dark:focus:ring-blue-800">
+                        <button type="button"
+                                data-modal-target="generate-recovery-codes-modal"
+                                data-modal-toggle="generate-recovery-codes-modal"
+                                class="text-blue-700 hover:text-white border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:hover:bg-blue-500 dark:focus:ring-blue-800">
                             Generate new codes
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+    <c-modal modal_id="generate-recovery-codes-modal" modal_title="You are about to generate a new set of recovery codes for your account. This action will invalidate your existing codes. Are you sure?" action_url="{% url 'mfa_generate_recovery_codes' %}"></c-modal>
 {% endblock content %}

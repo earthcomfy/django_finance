@@ -26,11 +26,12 @@
                                 {% url 'mfa_deactivate_totp' as deactivate_url %}
                                 {% url 'mfa_activate_totp' as activate_url %}
                                 {% if authenticators.totp %}
-                                    <a href="{{ deactivate_url }}">
-                                        <button class="w-full text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">
-                                            Deactivate
-                                        </button>
-                                    </a>
+                                    <button type="button"
+                                            data-modal-target="deactivate-2fa-modal"
+                                            data-modal-toggle="deactivate-2fa-modal"
+                                            class="w-full text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800">
+                                        Deactivate
+                                    </button>
                                 {% else %}
                                     <a href="{{ activate_url }}">
                                         <button class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
@@ -54,35 +55,30 @@
                                         No recovery codes set up.
                                     {% endif %}
                                 </p>
-                                <div class="mt-4">
-                                    {% if is_mfa_enabled and authenticators.recovery_codes %}
-                                        {% if unused_count > 0 %}
-                                            <div class="flex space-x-2">
-                                                <a href="{% url 'mfa_view_recovery_codes' %}">
-                                                    <button class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
-                                                        View
-                                                    </button>
-                                                </a>
-                                                <a href="{% url 'mfa_download_recovery_codes' %}">
-                                                    <button class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
-                                                        Download
-                                                    </button>
-                                                </a>
-                                                <a href="{% url 'mfa_generate_recovery_codes' %}">
-                                                    <button class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
-                                                        Generate
-                                                    </button>
-                                                </a>
-                                            </div>
+                                <div class="mt-4 flex space-x-2">
+                                    {% if is_mfa_enabled %}
+                                        {% if authenticators.recovery_codes %}
+                                            {% if unused_count > 0 %}
+                                                <div>
+                                                    <a href="{% url 'mfa_view_recovery_codes' %}">
+                                                        <button class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
+                                                            View
+                                                        </button>
+                                                    </a>
+                                                    <a href="{% url 'mfa_download_recovery_codes' %}">
+                                                        <button class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
+                                                            Download
+                                                        </button>
+                                                    </a>
+                                                </div>
+                                            {% endif %}
                                         {% endif %}
-                                    {% else %}
-                                        <div class="flex space-x-2">
-                                            <a href="{% url 'mfa_generate_recovery_codes' %}">
-                                                <button class="text-white bg-primary-600 hover:bg-primary-800-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-800-600 dark:hover:bg-red-700">
-                                                    Generate
-                                                </button>
-                                            </a>
-                                        </div>
+                                        <button type="button"
+                                                data-modal-target="generate-recovery-codes-modal"
+                                                data-modal-toggle="generate-recovery-codes-modal"
+                                                class="text-white bg-primary-600 hover:bg-primary-700 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700">
+                                            Generate
+                                        </button>
                                     {% endif %}
                                 </div>
                             </div>
@@ -92,4 +88,6 @@
             </div>
         </div>
     </section>
+    <c-modal modal_id="deactivate-2fa-modal" modal_title="You are about to deactivate authenticator app based authentication. Are you sure?" action_url="{% url 'mfa_deactivate_totp' %}"></c-modal>
+    <c-modal modal_id="generate-recovery-codes-modal" modal_title="You are about to generate a new set of recovery codes for your account. This action will invalidate your existing codes. Are you sure?" action_url="{% url 'mfa_generate_recovery_codes' %}"></c-modal>
 {% endblock content %}
