@@ -56,7 +56,11 @@ THIRD_PARTY_APPS = [
     "django_cotton",
 ]
 
-LOCAL_APPS = ["django_finance.apps.common", "django_finance.apps.accounts"]
+LOCAL_APPS = [
+    "django_finance.apps.common",
+    "django_finance.apps.accounts",
+    "django_finance.apps.plaid",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
