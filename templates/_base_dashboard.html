@@ -1,0 +1,48 @@
+{% load static %}
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Personal Finance Management App with Django, HTMX, Tailwind and Plaid">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>
+            {% block title %}
+            {% endblock title %}
+        </title>
+        <script src="{% static 'js/htmx.min.js' %}" defer></script>
+        {% tailwind_css %}
+    </head>
+    <body>
+        {% include "layouts/_header.html" %}
+        {% include "layouts/_sidebar.html" %}
+        <main>
+            <div class="px-96 mt-20 mx-auto">
+                {% if form.errors %}
+                    {% for field, errors in form.errors.items %}
+                        <c-alert div_id="{{ field }}" type="danger" message="
+                        {% for error in errors %}
+                            {{ field }}: {{ error }}
+                            {% if not forloop.last %}{% endif %}
+                        {% endfor %}
+                        " />
+                    {% endfor %}
+                {% endif %}
+                {% block default_messages %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <c-alert div_id="{{ message.tags }}" type="{{ message.tags }}" message="{{ message }}" />
+                        {% endfor %}
+                    {% endif %}
+                {% endblock default_messages %}
+            </div>
+            <div class="p-4 sm:ml-64">
+                {% block content %}
+                {% endblock content %}
+            </div>
+        </main>
+    </body>
+    <script src="{% static 'js/flowbite.min.js' %}"></script>
+</html>
