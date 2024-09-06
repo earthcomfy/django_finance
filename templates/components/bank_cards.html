@@ -1,0 +1,29 @@
+{% for item in items %}
+    <div x-data="bankCard({{ item.id }})"
+         id="bank-card-{{ item.id }}"
+         class="flex items-center justify-between bg-white p-6 border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-70 mb-4">
+        <div class="flex items-center">
+            <p class="text-md font-medium text-gray-700 dark:text-gray-400">{{ item.institution_name }}</p>
+        </div>
+        {% if item.status == 'Bad' %}
+            <button x-on:click="updatePlaidBadItem"
+                    data-plaid-id="{{ item.id }}"
+                    class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                Update Login
+            </button>
+        {% elif item.new_accounts_detected %}
+            <button x-on:click="addNewAccountsToPlaidItem"
+                    data-plaid-id="{{ item.id }}"
+                    class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                Update Login to Add New Accounts
+            </button>
+        {% else %}
+            <button hx-delete="{% url 'remove_item' item.id %}"
+                    hx-target="#bank-cards"
+                    hx-swap="outerHTML"
+                    class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                Remove
+            </button>
+        {% endif %}
+    </div>
+{% endfor %}

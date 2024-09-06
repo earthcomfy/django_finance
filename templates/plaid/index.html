@@ -1,8 +1,208 @@
 {% extends "_base_dashboard.html" %}
-{% load allauth %}
 {% block title %}
     Dashboard
 {% endblock title %}
+{% block cdns %}
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+{% endblock cdns %}
 {% block content %}
-    This is dashboard
+    <div x-data="plaidIntegration({{ items|length }})"
+         class="px-6 max-w-7xl mx-auto">
+        <h2 class="mb-3 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Overview</h2>
+        <h2 class="mt-6 text-2xl font-light text-gray-700 dark:text-gray-400">
+            This page shows your net worth, spending by category, and allows you to explore account and transactions details for linked items.
+        </h2>
+        <hr class="my-6 border-gray-300">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6">
+            <div class="flex justify-between items-center">
+                <div class="text-center">
+                    <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Email</p>
+                    <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400">{{ user.email }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Date Joined</p>
+                    <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400">{{ user.date_joined|date:"m/d/Y" }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Number of Banks Connected</p>
+                    <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400"
+                       x-text="`${numberOfBanks} banks`"></p>
+                </div>
+                <div x-show="!banksExist" id="add-bank-section">
+                    <button id="link-account"
+                            class="text-sm px-4 lg:px-5 py-2 lg:py-2.5 text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+                            x-on:click="openLink">Add a Bank</button>
+                </div>
+            </div>
+        </div>
+        <div id="banks-list" x-show="banksExist" class="mt-12">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400 mb-4"
+                        x-text="`${numberOfBanks} Banks Linked`"></h2>
+                    <p class="font-light text-gray-700 dark:text-gray-400 mb-6">
+                        Below is a list of all your connected banks. Click on a bank to view its associated accounts.
+                    </p>
+                </div>
+                <div>
+                    <button id="link-account"
+                            class="text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+                            x-on:click="openLink">Add another bank</button>
+                </div>
+            </div>
+            <div id="bank-cards">
+                <c-bank-cards :items="items" />
+            </div>
+        </div>
+    </div>
 {% endblock content %}
+{% block javascript %}
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('plaidIntegration', (itemsLength) => ({
+                banksExist: itemsLength > 0,
+                numberOfBanks: itemsLength,
+                plaid_id: null,
+                new_accounts_detected: false,
+                handler: null,
+                handlerConfig: null,
+                isOauth: window.location.href.includes("?oauth_state_id="),
+
+                async init() {
+                    this.handlerConfig = {
+                        token: await this.getLinkToken(this.plaid_id, this.new_accounts_detected),
+                        onSuccess: async (publicToken, metadata) => {
+                            await this.saveMetadata(metadata, "Success");
+
+                            // In update mode no need to exchange public token
+                            if (this.plaid_id) {
+                                const res = await fetch("{% url 'update_item_status' %}", {
+                                    method: "POST",
+                                    body: JSON.stringify({"plaid_id": this.plaid_id}),
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        'X-CSRFToken': '{{ csrf_token }}',
+                                    },
+                                });
+                                const data = await res.json();
+                                console.log(data);
+                            } else {
+                                const res = await fetch("{% url 'exchange_public_token' %}", {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        "public_token": publicToken,
+                                        "institution_id": metadata.institution.institution_id,
+                                        "institution_name": metadata.institution.name,
+                                    }),
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        'X-CSRFToken': '{{ csrf_token }}',
+                                    },
+                                });
+                                const bankCardsHtml = await res.text();
+
+                                this.banksExist = true;
+                                this.numberOfBanks += 1;
+
+                                const bankCards = document.getElementById("bank-cards");
+                                bankCards.innerHTML = bankCardsHtml;
+
+                                htmx.process(bankCards);
+                            }
+                        },
+                        onEvent: (eventName, metadata) => {},
+                        onExit: (error, metadata) => {
+                            this.saveMetadata(metadata, "Exit", error);
+                        },
+                    };
+
+                    if (this.isOauth) {
+                        this.handlerConfig.receivedRedirectUri = window.location.href;
+                    }
+                    this.handler = Plaid.create(this.handlerConfig);
+                    if (this.isOauth) {
+                        window.location.href = `${window.location.origin}/finance`;
+                    }
+                },
+
+                async createLinkToken(plaid_id, new_accounts_detected) {
+                    const res = await fetch("{% url 'create_link_token' %}", {
+                        method: "POST",
+                        body: JSON.stringify({'plaid_id': plaid_id, 'new_accounts_detected': new_accounts_detected}),
+                        headers: {
+                            "Content-Type": "application/json",
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    });
+                    const data = await res.json();
+                    const linkToken = data.link_token;
+                    localStorage.setItem("link_token", linkToken);
+                    return linkToken;
+                },
+
+                async getLinkToken(plaid_id, new_accounts_detected) {
+                    if (this.isOauth) {
+                        return localStorage.getItem("link_token");
+                    } else {
+                        return await this.createLinkToken(plaid_id, new_accounts_detected);
+                    }
+                },
+
+                async saveMetadata(metadata, event_type, error = null) {
+                    let body = {
+                        "link_session_id": metadata.link_session_id,
+                    };
+
+                    if (event_type === "Exit") {
+                        body["event_type"] = "Exit";
+                        body["request_id"] = metadata.request_id;
+
+                        if (error) {
+                            body["error_type"] = error.error_type;
+                            body["error_code"] = error.error_code;
+                        }
+
+                    } else {
+                        body["event_type"] = "Success";
+                    }
+
+                    await fetch("{% url 'create_link_event'%}", {
+                        method: "POST",
+                        body: JSON.stringify(body),
+                        headers: {
+                            "Content-Type": "application/json",
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    });
+                },
+
+                openLink() {
+                    this.handler.open();
+                },
+
+                updateBankData() {
+                    console.log("heeeeeeeeee")
+                    const bankCards = document.getElementById("bank-cards");
+                    this.numberOfBanks = bankCards.querySelectorAll('.bank-card').length;
+                    this.banksExist = this.numberOfBanks > 0;
+                },
+
+            }));
+
+            Alpine.data('bankCard', (itemId) => ({
+                async updatePlaidBadItem(event) {
+                    this.plaid_id = event.target.dataset.plaidId;
+                    this.handlerConfig.token = await this.getLinkToken(this.plaid_id);
+                    this.handler.open();
+                },
+
+                async addNewAccountsToPlaidItem(event) {
+                    this.plaid_id = event.target.dataset.plaidId;
+                    this.new_accounts_detected = true;
+                    this.handlerConfig.token = await this.getLinkToken(this.plaid_id, this.new_accounts_detected);
+                    this.handler.open();
+                },
+            }));
+        });
+    </script>
+{% endblock javascript %}

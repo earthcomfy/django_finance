@@ -51,5 +51,46 @@ class Item(BaseModel):
         ),
     )
 
+    class Meta:
+        ordering = ("-created_at",)
+
     def __str__(self):
         return f"{self.institution_name} - {self.user}"
+
+
+class PlaidLinkEvent(BaseModel):
+    """
+    Used to log responses from the Plaid API for client requests to the Plaid Link client. This information is useful for troubleshooting.
+    """
+
+    class EventTypeChoices(models.TextChoices):
+        SUCCESS = "SUCCESS", _("Success")
+        EXIT = "EXIT", _("Exit")
+
+    user_id = models.CharField(max_length=250, help_text=_("The ID of the user."))
+    event_type = models.CharField(
+        max_length=20,
+        choices=EventTypeChoices,
+        help_text=_("Displayed as `Success` or `Exit` based on response from onSuccess or onExit callbacks."),
+    )
+    link_session_id = models.TextField(
+        help_text=_("A unique identifier associated with a user's actions and events through the Link flow."),
+    )
+    request_id = models.TextField(
+        blank=True,
+        help_text=_("A unique identifier for the request, which can be used for troubleshooting."),
+    )
+    error_type = models.TextField(
+        blank=True,
+        help_text=_("A broad categorization of the error."),
+    )
+    error_code = models.TextField(
+        blank=True,
+        help_text=_("The particular error code. Each error_type has a specific set of error_codes."),
+    )
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"LinkEvent: user_id={self.user_id}, type={self.event_type}"

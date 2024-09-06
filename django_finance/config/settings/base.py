@@ -54,6 +54,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.mfa",
     "django_cotton",
+    "django_extensions",
 ]
 
 LOCAL_APPS = [
@@ -201,3 +202,14 @@ MESSAGE_TAGS = {
     messages.WARNING: "warning",
     messages.ERROR: "danger",
 }
+
+# App Info
+APP_NAME = "FinTrack"
+APP_URL = os.getenv("APP_URL", "http://localhost:8000")
+
+# Plaid
+PLAID_ENV = os.getenv("PLAID_ENV", "sandbox")
+PLAID_PRODUCTS = os.getenv("PLAID_PRODUCTS", "auth")
+PLAID_COUNTRY_CODES = os.getenv("PLAID_COUNTRY_CODES", "US")
+PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID")
+PLAID_SECRET = os.getenv("PLAID_SECRET")

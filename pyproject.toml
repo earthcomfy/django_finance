@@ -26,6 +26,7 @@ pytest-xdist = "^3.6.1"
 pytest-django = "^4.8.0"
 django-browser-reload = "^1.15.0"
 django-debug-toolbar = "^4.4.6"
+django-extensions = "^3.2.3"
 
 [build-system]
 requires = ["poetry-config"]

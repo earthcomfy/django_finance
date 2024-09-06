@@ -1,6 +1,35 @@
 from django.urls import path
-from django.views.generic.base import TemplateView
+
+from django_finance.apps.plaid.views import (
+    CreatePlaidLinkEvent,
+    CreatePlaidLinkToken,
+    DashboardView,
+    ExchangePlaidPublicAccessToken,
+    PlaidRemoveItemView,
+    PlaidSandboxItemFireWebhook,
+    PlaidSandboxItemResetLogin,
+    UpdatePlaidItemStatus,
+)
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="plaid/index.html"), name="dashboard"),
+    path("", DashboardView.as_view(), name="dashboard"),
+    path("create-link-token/", CreatePlaidLinkToken.as_view(), name="create_link_token"),
+    path(
+        "exchange-public-token/",
+        ExchangePlaidPublicAccessToken.as_view(),
+        name="exchange_public_token",
+    ),
+    path("create-link-event/", CreatePlaidLinkEvent.as_view(), name="create_link_event"),
+    path(
+        "update-item-status/",
+        UpdatePlaidItemStatus.as_view(),
+        name="update_item_status",
+    ),
+    path(
+        "remove/<int:pk>/",
+        PlaidRemoveItemView.as_view(),
+        name="remove_item",
+    ),
+    path("reset-login/", PlaidSandboxItemResetLogin.as_view(), name="reset_login"),
+    path("fire-webhook/", PlaidSandboxItemFireWebhook.as_view(), name="fire_webhook"),
 ]
