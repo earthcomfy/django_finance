@@ -3,16 +3,18 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models.query import QuerySet
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DeleteView, ListView
+from django.views.generic import DeleteView
+from django.views.generic.base import TemplateView
 
-from django_finance.apps.plaid.models import Item, PlaidLinkEvent
+from django_finance.apps.plaid.models import Account, Item, PlaidLinkEvent, Transaction
 from django_finance.apps.plaid.tasks import update_transactions
 from django_finance.apps.plaid.utils import plaid_config
 from django_finance.apps.plaid.webhooks import (
@@ -33,17 +35,57 @@ from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRe
 logger = logging.getLogger(__name__)
 
 
-class DashboardView(LoginRequiredMixin, ListView):
+class DashboardView(LoginRequiredMixin, TemplateView):
     """
-    Plaid overview page showing all linked items.
+    Gives a user information about integrated banks, accounts, transaction info etc.
     """
 
-    model = Item
-    context_object_name = "items"
     template_name = "plaid/index.html"
 
-    def get_queryset(self) -> QuerySet:
-        return super().get_queryset().filter(user=self.request.user)
+    def get_context_data(self, *args, **kwargs) -> dict:
+        context = super(DashboardView, self).get_context_data()
+        user = self.request.user
+        items = Item.objects.filter(user=user)
+        name_of_banks_connected = items.values_list("institution_name", flat=True)
+
+        # Net worth across all banks
+        net_worth = Account.objects.filter(item__user=user).aggregate(Sum("current_balance"))["current_balance__sum"]
+
+        # Total income and total expense
+        total_income = Transaction.objects.filter(account__item__user=user, amount__gt=0).aggregate(Sum("amount"))[
+            "amount__sum"
+        ]
+        total_expense = Transaction.objects.filter(account__item__user=user, amount__lt=0).aggregate(Sum("amount"))[
+            "amount__sum"
+        ]
+
+        # 5 Recent transactions
+        transactions = Transaction.objects.filter(account__item__user=user)[:5]
+
+        # Category spending breakdown
+        category_spending = (
+            Transaction.objects.filter(account__item__user=user)
+            .values("primary_personal_finance_category")
+            .distinct()
+            .order_by()
+            .annotate(total_spending=Sum("amount"))
+        )
+
+        category_spending_json = json.dumps(list(category_spending), cls=DjangoJSONEncoder)  # For chart.js
+
+        context = {
+            "items": items,
+            "no_of_banks": items.count(),
+            "name_of_banks_connected": name_of_banks_connected,
+            "net_worth": net_worth,
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "transactions": transactions,
+            "category_spending": category_spending,
+            "category_spending_json": category_spending_json,
+        }
+
+        return context
 
 
 class CreatePlaidLinkToken(LoginRequiredMixin, View):

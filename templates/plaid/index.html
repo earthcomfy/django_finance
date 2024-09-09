@@ -1,19 +1,18 @@
 {% extends "_base_dashboard.html" %}
+{% load humanize %}
+{% load plaid_tags %}
 {% block title %}
     Dashboard
 {% endblock title %}
 {% block cdns %}
     <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock cdns %}
 {% block content %}
     <div x-data="plaidIntegration({{ items|length }})"
          class="px-6 max-w-7xl mx-auto">
-        <h2 class="mb-3 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Overview</h2>
-        <h2 class="mt-6 text-2xl font-light text-gray-700 dark:text-gray-400">
-            This page shows your net worth, spending by category, and allows you to explore account and transactions details for linked items.
-        </h2>
-        <hr class="my-6 border-gray-300">
-        <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6">
+        <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Overview</h2>
+        <div class="mt-4 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6">
             <div class="flex justify-between items-center">
                 <div class="text-center">
                     <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Email</p>
@@ -23,16 +22,114 @@
                     <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Date Joined</p>
                     <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400">{{ user.date_joined|date:"m/d/Y" }}</p>
                 </div>
-                <div class="text-center">
-                    <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Number of Banks Connected</p>
-                    <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400"
-                       x-text="`${numberOfBanks} banks`"></p>
-                </div>
+                <a href="#banks-list">
+                    <div class="text-center">
+                        <p class="uppercase text-xs font-bold tracking-tight text-gray-900 dark:text-white">Number of Banks Connected</p>
+                        <p class="mt-2 text-sm font-light text-gray-700 dark:text-gray-400"
+                           x-text="`${numberOfBanks} banks`"></p>
+                    </div>
+                </a>
                 <div x-show="!banksExist" id="add-bank-section">
                     <button id="link-account"
                             class="text-sm px-4 lg:px-5 py-2 lg:py-2.5 text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
                             x-on:click="openLink">Add a Bank</button>
                 </div>
+            </div>
+        </div>
+        <!-- Net Worth -->
+        <div x-show="banksExist" class="mt-12">
+            <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Net Worth</h2>
+            <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6 mt-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">${{ net_worth|floatformat:2|intcomma }}</p>
+                        <p class="text-sm font-light text-gray-700 dark:text-gray-400">Net Worth - All Accounts</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">${{ total_income|floatformat:2|intcomma }}</p>
+                        <p class="text-sm font-light text-gray-700 dark:text-gray-400">Total Income</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">${{ total_expense|floatformat:2|intcomma }}</p>
+                        <p class="text-sm font-light text-gray-700 dark:text-gray-400">Total Expense</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Category Spending Breakdown (PieChart and Table) -->
+        <div x-show="banksExist" class="mt-12">
+            <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Category Spending Breakdown</h2>
+            <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6 mt-4 flex">
+                <!-- Pie Chart -->
+                <div class="w-1/2">
+                    <canvas id="categorySpendingChart" width="400" height="400"></canvas>
+                </div>
+                <!-- Table -->
+                <div class="w-1/2 pl-6">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr class="font-medium text-xs text-left  uppercase tracking-wider text-gray-900 whitespace-nowrap dark:text-white">
+                                <th scope="col" class="px-6 py-3">Category</th>
+                                <th scope="col" class="px-6 py-3">Total Spending</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200 text-gray-500 dark:text-gray-400">
+                            {% for entry in category_spending %}
+                                <tr>
+                                    <td class="px-6 py-4">{{ entry.primary_personal_finance_category|human_readable_category }}</td>
+                                    <td class="px-6 py-4">${{ entry.total_spending|floatformat:2|intcomma }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Recent Transactions -->
+        <div x-show="banksExist" class="mt-12">
+            <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Recent Transactions</h2>
+            <div class="relative overflow-x-auto mt-4">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3"></th>
+                            <th scope="col" class="px-6 py-3">Name</th>
+                            <th scope="col" class="px-6 py-3">Category</th>
+                            <th scope="col" class="px-6 py-3">Amount</th>
+                            <th scope="col" class="px-6 py-3">Date</th>
+                            <th scope="col" class="px-6 py-3">Pending</th>
+                        </tr>
+                    </thead>
+                    {% if transactions %}
+                        <tbody>
+                            {% for transaction in transactions %}
+                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                    <td class="px-6 py-4">
+                                        <img src="{{ transaction.personal_finance_category_icon_url }}"
+                                             alt="{{ transaction.name }}"
+                                             height=""
+                                             width=""
+                                             class="w-8 h-8 rounded-full">
+                                    </td>
+                                    <th scope="row"
+                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                        {{ transaction.name }}
+                                    </th>
+                                    <td class="px-6 py-4">{{ transaction.primary_personal_finance_category|human_readable_category }}</td>
+                                    <td class="px-6 py-4">${{ transaction.amount|floatformat:2|intcomma }}</td>
+                                    <td class="px-6 py-4">{{ transaction.date }}</td>
+                                    <td class="px-6 py-4">{{ transaction.pending }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    {% else %}
+                        <tbody>
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                <td class="px-6 py-4 text-center" colspan="12">No Transactions Data Found</td>
+                            </tr>
+                        </tbody>
+                    {% endif %}
+                </table>
             </div>
         </div>
         <div id="banks-list" x-show="banksExist" class="mt-12">
@@ -123,6 +220,8 @@
                     if (this.isOauth) {
                         window.location.href = `${window.location.origin}/finance`;
                     }
+
+                    this.initPieChart();
                 },
 
                 async createLinkToken(plaid_id, new_accounts_detected) {
@@ -181,11 +280,57 @@
                 },
 
                 updateBankData() {
-                    console.log("heeeeeeeeee")
                     const bankCards = document.getElementById("bank-cards");
                     this.numberOfBanks = bankCards.querySelectorAll('.bank-card').length;
                     this.banksExist = this.numberOfBanks > 0;
                 },
+
+                initPieChart() {
+                    const ctx = document.getElementById('categorySpendingChart').getContext('2d');
+                    const categorySpending = JSON.parse('{{ category_spending_json|escapejs }}');
+
+                    const humanReadableCategory = function (category) {
+                        return category
+                            .replace(/_/g, " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (s) => s.toUpperCase())
+                            .replace(/\b(And|Or)\b/, (s) => s.toLowerCase());
+                    };
+
+                    const labels = categorySpending.map(entry => humanReadableCategory(entry.primary_personal_finance_category));
+                    const data = categorySpending.map(entry => parseFloat(entry.total_spending));
+
+                    const chartData = {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(255, 159, 64)',
+                                'rgb(255, 205, 86)',
+                                'rgb(75, 192, 192)',
+                                'rgb(54, 162, 235)',
+                                'rgb(201, 203, 207)',
+                                'rgb(153, 102, 255)',
+                            ],
+                        }]
+                    };
+
+                    const config = {
+                        type: 'pie',
+                        data: chartData,
+                        options: {
+                            responsive: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                            }
+                        },
+                    };
+
+                    new Chart(ctx, config);
+                }
 
             }));
 

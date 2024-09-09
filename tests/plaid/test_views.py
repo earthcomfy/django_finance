@@ -1,28 +1,50 @@
 import json
+from decimal import Decimal
 
 import pytest
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
-from django_finance.apps.plaid.models import Item
-from tests.plaid.factories import ItemFactory
+from django_finance.apps.plaid.models import Account, Item
+from tests.plaid.factories import AccountFactory, ItemFactory, TransactionFactory
 
 pytestmark = pytest.mark.django_db
 
 
 class TestDashboardView:
-    def test_dashboard_view_uses_correct_template(self, client, user):
-        client.force_login(user)
+    def test_dashboard_view_uses_correct_template(self, login):
+        client, _ = login()
         response = client.get(reverse("dashboard"))
         assert response.status_code == 200
         assert "plaid/index.html" in (t.name for t in response.templates)
 
-    def test_dashboard_view_shows_user_items(self, client, user, item):
-        client.force_login(user)
+    def test_financial_insights(self, login, item):
+        client, user = login()
+        item: Item = ItemFactory.create(
+            user=user,
+            institution_name="BOA",
+        )
+        account: Account = AccountFactory.create(
+            item=item,
+            account_id="test_account",
+            current_balance=Decimal("1000"),
+        )
+        TransactionFactory.create(
+            account=account,
+            transaction_id="test_transaction",
+            amount=Decimal("50"),
+        )
         response = client.get(reverse("dashboard"))
-
         assert response.status_code == 200
         assert item in response.context["items"]
+        assert response.context["no_of_banks"] == 1
+        assert response.context["name_of_banks_connected"][0] == "BOA"
+        assert response.context["net_worth"] == Decimal(1000)
+        assert response.context["total_income"] == Decimal(50)
+        assert response.context["total_expense"] is None
+        assert response.context["transactions"].count() == 1
+        assert response.context["category_spending"][0]["total_spending"] == Decimal(50)
+        assert json.loads(response.context["category_spending_json"])[0]["total_spending"] == "50"
 
 
 class TestCreatePlaidLinkToken:
