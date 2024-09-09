@@ -1,6 +1,6 @@
 import factory
 
-from django_finance.apps.plaid.models import Item, PlaidLinkEvent
+from django_finance.apps.plaid.models import Account, Item, PlaidLinkEvent, Transaction
 from tests.accounts.factories import UserFactory
 
 
@@ -28,3 +28,27 @@ class PlaidLinkEventFactory(factory.django.DjangoModelFactory):
     request_id = factory.Faker("word")
     error_type = factory.Faker("word")
     error_code = factory.Faker("word")
+
+
+class AccountFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Account
+
+    item = factory.SubFactory(ItemFactory)
+    account_id = factory.Faker("word")
+    name = factory.Faker("word")
+    account_type = factory.Faker(
+        "random_element",
+        elements=[choice[0] for choice in Account.ACCOUNT_TYPE_CHOICES.choices],
+    )
+
+
+class TransactionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Transaction
+
+    account = factory.SubFactory(AccountFactory)
+    transaction_id = factory.Faker("word")
+    location = factory.Faker("json")
+    pending = factory.Faker("boolean")
+    date = factory.Faker("date")

@@ -7,8 +7,19 @@ from django.db.models.query import QuerySet
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DeleteView, ListView
+
+from django_finance.apps.plaid.models import Item, PlaidLinkEvent
+from django_finance.apps.plaid.tasks import update_transactions
+from django_finance.apps.plaid.utils import plaid_config
+from django_finance.apps.plaid.webhooks import (
+    handle_item_webhook,
+    handle_transactions_webhook,
+    verify_webhook,
+)
 from plaid.model.item_public_token_exchange_request import (
     ItemPublicTokenExchangeRequest,
 )
@@ -18,9 +29,6 @@ from plaid.model.link_token_create_request_update import LinkTokenCreateRequestU
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.sandbox_item_fire_webhook_request import SandboxItemFireWebhookRequest
 from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRequest
-
-from django_finance.apps.plaid.models import Item, PlaidLinkEvent
-from django_finance.apps.plaid.utils import plaid_config
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +111,7 @@ class ExchangePlaidPublicAccessToken(LoginRequiredMixin, View):
             access_token = exchange_response.get("access_token")
             item_id = exchange_response.get("item_id")
 
-            Item.objects.create(
+            instance = Item.objects.create(
                 user=self.request.user,
                 access_token=access_token,
                 item_id=item_id,
@@ -111,6 +119,9 @@ class ExchangePlaidPublicAccessToken(LoginRequiredMixin, View):
                 institution_name=name,
                 status=Item.ItemStatusChoices.GOOD,
             )
+
+            # Make an initial call to fetch transactions
+            update_transactions.delay(instance.id)
 
             items = Item.objects.filter(user=self.request.user)
             return render(request, "components/bank_cards.html", {"items": items})
@@ -246,4 +257,36 @@ class PlaidSandboxItemFireWebhook(LoginRequiredMixin, View):
             return HttpResponse(status=200)
         except Exception as e:
             logger.error(f"Something went wrong in PlaidSandboxItemFireWebhook {request.user} , error: {str(e)}")
+            return HttpResponse(status=500)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PlaidWebhook(View):
+    """
+    Handles Plaid webhooks.
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if verify_webhook(request.body, request.headers):
+                payload = json.loads(request.body)
+                webhook_type = payload.get("webhook_type")
+                webhook_code = payload.get("webhook_code")
+                item_id = payload.get("item_id")
+                error = payload.get("error")
+
+                if webhook_type == "ITEM":
+                    handle_item_webhook(webhook_code, item_id, error)
+
+                elif webhook_type == "TRANSACTIONS":
+                    handle_transactions_webhook(webhook_code, item_id)
+
+                return HttpResponse(status=200)
+
+            else:
+                logger.info("Webhook didn't pass verification")
+                return HttpResponse(status=401)
+
+        except Exception as e:
+            logger.error(f"Webhook error {str(e)}")
             return HttpResponse(status=500)

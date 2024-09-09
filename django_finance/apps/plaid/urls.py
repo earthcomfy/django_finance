@@ -8,6 +8,7 @@ from django_finance.apps.plaid.views import (
     PlaidRemoveItemView,
     PlaidSandboxItemFireWebhook,
     PlaidSandboxItemResetLogin,
+    PlaidWebhook,
     UpdatePlaidItemStatus,
 )
 
@@ -32,4 +33,5 @@ urlpatterns = [
     ),
     path("reset-login/", PlaidSandboxItemResetLogin.as_view(), name="reset_login"),
     path("fire-webhook/", PlaidSandboxItemFireWebhook.as_view(), name="fire_webhook"),
+    path("webhook/", PlaidWebhook.as_view(), name="plaid_webhook"),
 ]

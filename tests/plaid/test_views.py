@@ -99,16 +99,19 @@ class TestCreatePlaidLinkToken:
 
 class TestExchangePlaidPublicAccessToken:
     @pytest.fixture
-    def mock_plaid_exchange(self, mocker):
-        return mocker.patch(
-            "django_finance.apps.plaid.views.plaid_config.client.item_public_token_exchange",
-            return_value={
-                "access_token": "mock_access_token",
-                "item_id": "mock_item_id",
-            },
-        )
+    def setup_mocks(self, mocker):
+        return {
+            "mock_plaid_exchange": mocker.patch(
+                "django_finance.apps.plaid.views.plaid_config.client.item_public_token_exchange",
+                return_value={
+                    "access_token": "mock_access_token",
+                    "item_id": "mock_item_id",
+                },
+            ),
+            "mock_update_transactions": mocker.patch("django_finance.apps.plaid.views.update_transactions.delay"),
+        }
 
-    def test_exchange_success(self, client, login, mock_plaid_exchange):
+    def test_exchange_success(self, client, login, setup_mocks):
         client, user = login()
         institution_id = "mock_institution_id"
         request_data = {
@@ -124,7 +127,11 @@ class TestExchangePlaidPublicAccessToken:
         )
 
         assert response.status_code == 200
-        mock_plaid_exchange.assert_called_once()
+        setup_mocks["mock_plaid_exchange"].assert_called_once()
+        setup_mocks["mock_update_transactions"].assert_called_once_with(
+            Item.objects.filter(item_id="mock_item_id").first().id
+        )
+
         assert Item.objects.filter(user=user, institution_id=institution_id).exists()
         assert "components/bank_cards.html" in (t.name for t in response.templates)
 

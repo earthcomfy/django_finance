@@ -14,6 +14,7 @@ django-allauth = { extras = ["mfa"], version = "^64.1.0" }
 django-cotton = "^0.9.32"
 plaid-python = "^24.0.0"
 celery = {extras = ["redis"], version = "^5.4.0"}
+python-jose = "^3.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -28,6 +29,7 @@ pytest-django = "^4.8.0"
 django-browser-reload = "^1.15.0"
 django-debug-toolbar = "^4.4.6"
 django-extensions = "^3.2.3"
+pytest-celery = "^1.1.1"
 
 [build-system]
 requires = ["poetry-config"]

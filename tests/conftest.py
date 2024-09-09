@@ -47,7 +47,7 @@ def create_user(django_user_model, test_password):
     - make_user: A function that takes an email as input and creates a user with the given email and test password.
     """
 
-    def _make_user(email):
+    def _make_user(email="test@example.com"):
         return django_user_model.objects.create_user(email=email, password=test_password)
 
     return _make_user
