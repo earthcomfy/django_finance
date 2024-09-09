@@ -13,6 +13,7 @@ django-tailwind = "^3.8.0"
 django-allauth = { extras = ["mfa"], version = "^64.1.0" }
 django-cotton = "^0.9.32"
 plaid-python = "^24.0.0"
+celery = {extras = ["redis"], version = "^5.4.0"}
 
 
 [tool.poetry.group.dev.dependencies]
