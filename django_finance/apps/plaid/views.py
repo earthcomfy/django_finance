@@ -13,15 +13,6 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DeleteView
 from django.views.generic.base import TemplateView
-
-from django_finance.apps.plaid.models import Account, Item, PlaidLinkEvent, Transaction
-from django_finance.apps.plaid.tasks import update_transactions
-from django_finance.apps.plaid.utils import plaid_config
-from django_finance.apps.plaid.webhooks import (
-    handle_item_webhook,
-    handle_transactions_webhook,
-    verify_webhook,
-)
 from plaid.model.item_public_token_exchange_request import (
     ItemPublicTokenExchangeRequest,
 )
@@ -31,6 +22,15 @@ from plaid.model.link_token_create_request_update import LinkTokenCreateRequestU
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.sandbox_item_fire_webhook_request import SandboxItemFireWebhookRequest
 from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRequest
+
+from django_finance.apps.plaid.models import Account, Item, PlaidLinkEvent, Transaction
+from django_finance.apps.plaid.tasks import update_transactions
+from django_finance.apps.plaid.utils import plaid_config
+from django_finance.apps.plaid.webhooks import (
+    handle_item_webhook,
+    handle_transactions_webhook,
+    verify_webhook,
+)
 
 logger = logging.getLogger(__name__)
 

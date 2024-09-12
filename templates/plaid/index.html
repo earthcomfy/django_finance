@@ -37,7 +37,7 @@
             </div>
         </div>
         <!-- Net Worth -->
-        <div x-show="banksExist" class="mt-12">
+        <div id="net-worth" x-show="banksExist" class="mt-12">
             <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Net Worth</h2>
             <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6 mt-4">
                 <div class="flex justify-between items-center">
@@ -57,11 +57,13 @@
             </div>
         </div>
         <!-- Category Spending Breakdown (PieChart and Table) -->
-        <div x-show="banksExist" class="mt-12">
+        <div id="category-spending" x-show="banksExist" class="mt-12">
             <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Category Spending Breakdown</h2>
             <div class="bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 p-6 mt-4 flex">
                 <!-- Pie Chart -->
-                <div class="w-1/2">
+                <div id="category-pie-chart"
+                     class="w-1/2"
+                     data-category-spending="{{ category_spending_json|escapejs }}">
                     <canvas id="categorySpendingChart" width="400" height="400"></canvas>
                 </div>
                 <!-- Table -->
@@ -86,7 +88,7 @@
             </div>
         </div>
         <!-- Recent Transactions -->
-        <div x-show="banksExist" class="mt-12">
+        <div id="recent-transactions" x-show="banksExist" class="mt-12">
             <h2 class="text-3xl font-semibold text-gray-700 dark:text-gray-400">Recent Transactions</h2>
             <div class="relative overflow-x-auto mt-4">
                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -151,6 +153,21 @@
                 <c-bank-cards :items="items" />
             </div>
         </div>
+        <!-- Loading Indicator -->
+        <div x-show="isLoading"
+             class="fixed inset-0 flex items-center justify-center">
+            <div role="status">
+                <svg aria-hidden="true"
+                     class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                     viewBox="0 0 100 101"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
+                    <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" />
+                </svg>
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
     </div>
 {% endblock content %}
 {% block javascript %}
@@ -159,6 +176,7 @@
             Alpine.data('plaidIntegration', (itemsLength) => ({
                 banksExist: itemsLength > 0,
                 numberOfBanks: itemsLength,
+                isLoading: false,
                 plaid_id: null,
                 new_accounts_detected: false,
                 handler: null,
@@ -196,15 +214,19 @@
                                         'X-CSRFToken': '{{ csrf_token }}',
                                     },
                                 });
-                                const bankCardsHtml = await res.text();
+                                if (res.ok) {
+                                    this.isLoading = true;
 
-                                this.banksExist = true;
-                                this.numberOfBanks += 1;
+                                    // Wait for X seconds for background tasks to complete
+                                    // In the future, this can be replaced with a websocket connection to update the UI in real-time
+                                    await new Promise(resolve => setTimeout(resolve, 3000));
 
-                                const bankCards = document.getElementById("bank-cards");
-                                bankCards.innerHTML = bankCardsHtml;
+                                    await this.updateDashboardContent();
 
-                                htmx.process(bankCards);
+                                    this.banksExist = true;
+                                    this.numberOfBanks += 1;
+                                    this.isLoading = false;
+                                } else {}
                             }
                         },
                         onEvent: (eventName, metadata) => {},
@@ -284,13 +306,35 @@
                 },
 
                 updateBankData() {
+                    this.updateDashboardContent();
+
                     this.numberOfBanks -= 1;
                     this.banksExist = this.numberOfBanks > 0;
                 },
 
-                initPieChart() {
+                async updateDashboardContent() {
+                    const dashboardRes = await fetch("{% url 'dashboard' %}");
+                    if (dashboardRes.ok) {
+                        const dashboardHtml = await dashboardRes.text();
+
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(dashboardHtml, 'text/html');
+
+                        document.getElementById('net-worth').innerHTML = doc.getElementById('net-worth').innerHTML;
+                        document.getElementById('category-spending').innerHTML = doc.getElementById('category-spending').innerHTML;
+                        document.getElementById('recent-transactions').innerHTML = doc.getElementById('recent-transactions').innerHTML;
+                        document.getElementById('banks-list').innerHTML = doc.getElementById('banks-list').innerHTML;
+
+                        const categorySpendingJson = doc.getElementById('category-pie-chart').getAttribute('data-category-spending');
+                        this.initPieChart(categorySpendingJson.replace(/\\u0022/g, '"'));
+
+                        htmx.process(document.getElementById('banks-list'));
+                    } else {}
+                },
+
+                initPieChart(categorySpendingJson=null) {
                     const ctx = document.getElementById('categorySpendingChart').getContext('2d');
-                    const categorySpending = JSON.parse('{{ category_spending_json|escapejs }}');
+                    const categorySpending = categorySpendingJson ? JSON.parse(categorySpendingJson) : JSON.parse('{{ category_spending_json|escapejs }}');
 
                     const humanReadableCategory = function (category) {
                         return category
