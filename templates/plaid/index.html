@@ -244,7 +244,9 @@
                     }
 
                     document.addEventListener('htmx:afterRequest', (event) => {
-                        this.updateBankData();
+                        if (event.detail.elt && event.detail.elt.matches('button[hx-delete]')) {
+                            this.updateBankData();
+                        }
                     });
 
                     this.initPieChart();

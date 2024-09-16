@@ -1,6 +1,7 @@
 from django.urls import path
 
 from django_finance.apps.plaid.views import (
+    AccountsInItemView,
     CreatePlaidLinkEvent,
     CreatePlaidLinkToken,
     DashboardView,
@@ -14,6 +15,7 @@ from django_finance.apps.plaid.views import (
 
 urlpatterns = [
     path("", DashboardView.as_view(), name="dashboard"),
+    path("item-accounts/<int:pk>", AccountsInItemView.as_view(), name="account_list"),
     path("create-link-token/", CreatePlaidLinkToken.as_view(), name="create_link_token"),
     path(
         "exchange-public-token/",

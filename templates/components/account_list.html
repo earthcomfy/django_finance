@@ -1,0 +1,20 @@
+{% load humanize %}
+<div class="p-5 border border-gray-200 rounded-lg shadow-lg dark:border-gray-700 dark:bg-gray-800 mb-4">
+    <ul class="list-none">
+        {% for account in accounts %}
+            <li class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                <div class="flex items-center">
+                    <p class="text-md font-medium text-gray-700 dark:text-gray-400">
+                        <strong>{{ account.name }}</strong> - {{ account.available_balance|intcomma|floatformat:2 }}
+                    </p>
+                </div>
+            </li>
+        {% empty %}
+            <li class="flex items-center justify-between p-6">
+                <div class="flex items-center">
+                    <p class="text-md font-medium text-gray-700 dark:text-gray-400">No accounts found for this bank.</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

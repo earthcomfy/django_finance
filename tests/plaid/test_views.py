@@ -47,6 +47,22 @@ class TestDashboardView:
         assert json.loads(response.context["category_spending_json"])[0]["total_spending"] == "50"
 
 
+class AccountsInItemView:
+    def test_accounts_in_item_view_uses_correct_template(self, login, item):
+        client, _ = login()
+        response = client.get(reverse("account_list", kwargs={"pk": item.id}))
+        assert response.status_code == 200
+        assert "components/account_list.html" in (t.name for t in response.templates)
+
+    def test_accounts_in_item_view_context(self, login, item):
+        client, _ = login()
+        account = AccountFactory.create(item=item)
+        response = client.get(reverse("account_list", kwargs={"pk": item.id}))
+        assert response.status_code == 200
+        assert item in response.context["item"]
+        assert account in response.context["accounts"]
+
+
 class TestCreatePlaidLinkToken:
     LINK_TOKEN = "link_token"
 

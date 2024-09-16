@@ -11,17 +11,8 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DeleteView
+from django.views.generic import DeleteView, ListView
 from django.views.generic.base import TemplateView
-from plaid.model.item_public_token_exchange_request import (
-    ItemPublicTokenExchangeRequest,
-)
-from plaid.model.item_remove_request import ItemRemoveRequest
-from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_create_request_update import LinkTokenCreateRequestUpdate
-from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
-from plaid.model.sandbox_item_fire_webhook_request import SandboxItemFireWebhookRequest
-from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRequest
 
 from django_finance.apps.plaid.models import Account, Item, PlaidLinkEvent, Transaction
 from django_finance.apps.plaid.tasks import update_transactions
@@ -31,6 +22,15 @@ from django_finance.apps.plaid.webhooks import (
     handle_transactions_webhook,
     verify_webhook,
 )
+from plaid.model.item_public_token_exchange_request import (
+    ItemPublicTokenExchangeRequest,
+)
+from plaid.model.item_remove_request import ItemRemoveRequest
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_update import LinkTokenCreateRequestUpdate
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.sandbox_item_fire_webhook_request import SandboxItemFireWebhookRequest
+from plaid.model.sandbox_item_reset_login_request import SandboxItemResetLoginRequest
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +86,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         }
 
         return context
+
+
+class AccountsInItemView(LoginRequiredMixin, ListView):
+    model = Account
+    context_object_name = "accounts"
+    template_name = "components/account_list.html"
+
+    def get_queryset(self):
+        item_id = self.kwargs.get("pk")
+        return Account.objects.filter(item_id=item_id)
 
 
 class CreatePlaidLinkToken(LoginRequiredMixin, View):
