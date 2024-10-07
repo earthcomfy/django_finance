@@ -244,7 +244,7 @@
                     }
 
                     document.addEventListener('htmx:afterRequest', (event) => {
-                        if (event.detail.elt && event.detail.elt.matches('button[hx-delete]')) {
+                        if (event.detail.elt && event.detail.elt.querySelector('#bank-accordion')) {
                             this.updateBankData();
                         }
                     });
@@ -384,6 +384,8 @@
             }));
 
             Alpine.data('bankCard', (itemId) => ({
+                isOpen: false,
+
                 async updatePlaidBadItem(event) {
                     this.plaid_id = itemId;
                     this.handlerConfig.token = await this.getLinkToken(this.plaid_id);
