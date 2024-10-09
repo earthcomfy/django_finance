@@ -23,3 +23,4 @@ This project is a personal finance management app that integrates [Plaid](https:
 - Tailwind + Flowbite
 
 ## Learn More
+Check out my article on [DEV](https://dev.to/earthcomfy/personal-finance-management-app-with-django-htmx-alpine-tailwind-and-plaid-2bl0)
