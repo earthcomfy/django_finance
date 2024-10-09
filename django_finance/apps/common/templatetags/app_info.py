@@ -10,4 +10,4 @@ def app_name():
 
 @register.simple_tag
 def app_description():
-    return "Personal Finance Management App with Django, HTMX, Tailwind and Plaid"
+    return "Personal Finance Management App with Django, HTMX, Alpine, Tailwind and Plaid"

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "FinTrack"
 version = "0.1.0"
-description = "Personal Finance Management App with Django, HTMX, Tailwind and Plaid"
+description = "Personal Finance Management App with Django, HTMX, Alpine, Tailwind and Plaid"
 authors = ["earthcomfy <hanagetbel93@gmail.com>"]
 readme = "README.md"
 
@@ -13,7 +13,7 @@ django-tailwind = "^3.8.0"
 django-allauth = { extras = ["mfa"], version = "^64.1.0" }
 django-cotton = "^0.9.32"
 plaid-python = "^24.0.0"
-celery = {extras = ["redis"], version = "^5.4.0"}
+celery = { extras = ["redis"], version = "^5.4.0" }
 python-jose = "^3.3.0"
 
 
